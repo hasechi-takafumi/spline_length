@@ -121,8 +121,7 @@ public class Main extends JFrame {
     // ---------- ↓knotを指定しない場合↓ (節点間隔に合わせて節点列を自動で生成) ----------
     // 分かりやすいように時刻パラメータを0から始まるようにシフトしておく.
     Range timeRange = Range.create(0.0, L);
-//    // 点列の時系列を正規化する.
-    List<Point> normalizedPoints = normalizePoints(timeRange);
+
 
     List<Double> disList = new ArrayList<>();
     double dis = 0.0;
@@ -136,6 +135,28 @@ public class Main extends JFrame {
       }
       //System.out.println(disList.get(i));
     }
+//    // 点列の時系列を正規化する.
+    List<Point> normalizedPoints = normalizePoints(timeRange);
+    List<Point> shiftedPoints = shiftPointsTimeZero();
+    for (int i = 0; i < shiftedPoints.size(); i++){
+      System.out.println(shiftedPoints.get(i));
+    }
+
+    List<Double> kotyolist = new ArrayList<>();
+    for (int i = 0; i < shiftedPoints.size() - 1; i++){
+      for (int u = 0; u <= 150; u++){
+        if ((Math.floor(shiftedPoints.get(i+1).time()*10)/10) - (Math.floor(shiftedPoints.get(i).time()*10)/10) < 0.5){
+          if (shiftedPoints.get(i+1).time() > 0.1 * u && shiftedPoints.get(i).time() <= 0.1 * u) {
+            double a = (shiftedPoints.get(i+1).time() - 0.1*u) / (shiftedPoints.get(i+1).time() - shiftedPoints.get(i).time());
+            double b = (0.1*u - shiftedPoints.get(i).time()) / (shiftedPoints.get(i+1).time() - shiftedPoints.get(i).time());
+            double v = a * disList.get(i) + b * disList.get(i+1);
+            kotyolist.add(v);
+          }
+        }
+      }
+    }
+    System.out.println(kotyolist);
+
 
     for (int i = 0; i < m_points.size() - 1; i++){
       normalizedPoints.set(i,Point.createXYT(normalizedPoints.get(i).x(),normalizedPoints.get(i).y(),disList.get(i)));
@@ -148,13 +169,25 @@ public class Main extends JFrame {
     // 次数
     int degree = 3;
 
+    //for(int i = 0; i < kotyolist.size())
+
+    double[] knot_2;
+    knot_2 = new double[kotyolist.size()+5];
+    knot_2[0] = 0.0;
+    knot_2[1] = 0.0;
+    for (int i = 0; i < kotyolist.size(); i++){
+      knot_2[i+2] = kotyolist.get(i);
+    }
+    knot_2[kotyolist.size()+2] = L;
+    knot_2[kotyolist.size()+3] = L;
+    knot_2[kotyolist.size()+4] = L;
     // 節点間隔
     //double knotInterval = L/10;
-    double[] knot = new double[]{-0.2, -0.1, 0.0,L/2 ,(L/10)*6,(L/10)*7,(L/10)*8, (L/10)*9, L,L+10, L+20};
+    //double[] knot = new double[]{-0.2, -0.1, 0.0,L/2 ,(L/10)*6,(L/10)*7,(L/10)*8, (L/10)*9, L,L+10, L+20};
 
     // スプライン補間を行う
     // SplineCurveInterpolator.interpolateの引数は(点列(Point[]型), 次数(int型), 節点間隔(double型))にする.
-    SplineCurve splineCurve = SplineCurveInterpolator.interpolate(points, degree, knot);
+    SplineCurve splineCurve = SplineCurveInterpolator.interpolate(points, degree, knot_2);
     // ---------- ↑knotを指定しない場合↑ (節点間隔に合わせて節点列を自動で生成) ----------
 
 
